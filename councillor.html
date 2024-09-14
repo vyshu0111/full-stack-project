@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counselor Dashboard</title>
+    <style>
+         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+:root {
+    --primary-color: #4a90e2;
+    --secondary-color: #f39c12;
+    --background-color: #f4f7f9;
+    --text-color: #333;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2rem;
+}
+
+.sidebar h2 {
+    margin-bottom: 2rem;
+}
+
+.sidebar ul {
+    list-style-type: none;
+}
+
+.sidebar ul li {
+    margin-bottom: 1rem;
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+    color: var(--primary-color);
+}
+
+.session-requests, .upcoming-sessions {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.session-requests h2, .upcoming-sessions h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: var(--background-color);
+    font-weight: 600;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Counselor Dashboard</h2>
+            <ul>
+                <li><a href="login-registration.html">Home</a></li>
+                <li><a href="session-request.html">Sessions</a></li>
+                <li><a href="#students">Students</a></li>
+                <li><a href="#reports">Reports</a></li>
+                <li><a href="#settings">Settings</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h1>Welcome, Counselor</h1>
+                <button class="btn btn-secondary" id="logoutBtn">Log Out</button>
+            </div>
+            <div class="session-requests">
+                <h2>Session Requests</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionRequestsBody">
+                        <!-- Session requests will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="upcoming-sessions">
+                <h2>Upcoming Sessions</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcomingSessionsBody">
+                        <!-- Upcoming sessions will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Session Details</h2>
+            <p><strong>Description:</strong> <span id="sessionDescription"></span></p>
+            <form id="sessionForm">
+                <label for="sessionNotes">Session Notes:</label>
+                <textarea id="sessionNotes" name="sessionNotes" rows="4" cols="50"></textarea>
+                <br>
+                <button type="submit" class="btn btn-primary">Save Notes</button>
+            </form>
+        </div>
+    </div>
+    
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLaYB0hAaGoyOkqQkb6yGijLMBOgacUSA",
+            authDomain: "full-stack-ade17.firebaseapp.com",
+            databaseURL: "https://full-stack-ade17-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "full-stack-ade17",
+            storageBucket: "full-stack-ade17.appspot.com",
+            messagingSenderId: "539142924736",
+            appId: "1:539142924736:web:a83efa93bce3fce6480025",
+            measurementId: "G-8G97MG1GJ5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let currentCounselorId = null;
+
+        // Check if user is logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log("User is signed in:", user);
+                currentCounselorId = user.uid;
+                document.getElementById('counselorName').textContent = user.displayName || user.email;
+                loadSessionRequests();
+            } else {
+                console.log("No user signed in, redirecting to login page");
+                window.location.href = 'login-registration.html';
+            }
+        });
+
+        // Fetch and display session requests
+        function loadSessionRequests() {
+            console.log("Loading session requests");
+            fetch('/api/counselor-sessions/all')
+                .then(response => response.json())
+                .then(sessions => {
+                    console.log("Received sessions:", sessions);
+                    populateTable('sessionRequestsBody', sessions.filter(s => s.status === 'requested'));
+                    populateTable('upcomingSessionsBody', sessions.filter(s => s.status === 'approved'));
+                })
+                .catch(error => console.error('Error loading sessions:', error));
+        }
+
+        // Function to populate session requests and upcoming sessions
+        function populateTable(tableId, data) {
+            const tableBody = document.getElementById(tableId);
+            tableBody.innerHTML = "";
+            data.forEach(session => {
+                const row = `
+                    <tr>
+                        <td>${session.studentName || session.name}</td>
+                        <td>${session.date}</td>
+                        <td>${session.time}</td>
+                        <td>${session.type}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="openSessionModal('${session.id}')">View</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function openSessionModal(sessionId) {
+            const modal = document.getElementById("sessionModal");
+            const sessionNotesInput = document.getElementById("sessionNotes");
+            const sessionForm = document.getElementById("sessionForm");
+            const sessionDescription = document.getElementById("sessionDescription");
+
+            modal.style.display = "block";
+
+            fetch(`/api/session/${sessionId}`)
+                .then(response => response.json())
+                .then(session => {
+                    console.log("Session details:", session);
+                    sessionNotesInput.value = session.notes || "";
+                    sessionDescription.textContent = session.description || "No description provided.";
+                    
+                    sessionForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        const notes = sessionNotesInput.value;
+                        fetch(`/api/session/${sessionId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                status: 'approved',
+                                notes: notes
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Session updated:', data);
+                            modal.style.display = "none";
+                            loadSessionRequests();
+                        })
+                        .catch((error) => {
+                            console.error('Error updating session:', error);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching session details:', error));
+        }
+
+        // Modal functionality
+        const modal = document.getElementById("sessionModal");
+        const span = document.getElementsByClassName("close")[0];
+
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Log out functionality
+        document.getElementById("logoutBtn").onclick = function() {
+            auth.signOut().then(() => {
+                console.log("User signed out");
+                window.location.href = 'login-registration1.html';
+            }).catch((error) => {
+                console.error("Error signing out:", error);
+            });
+        }
+    </script>
+</body>
+</html>

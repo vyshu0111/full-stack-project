@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counselor Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f39c12;
+            --background-color: #f4f7f9;
+            --text-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2rem;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 1rem;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            color: var(--primary-color);
+        }
+
+        .session-requests, .upcoming-sessions {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .session-requests h2, .upcoming-sessions h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--background-color);
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Counselor Dashboard</h2>
+            <ul>
+                <li><a href="login-registration.html">Home</a></li>
+                <li><a href="session-request.html">Sessions</a></li>
+                <li><a href="#students">Students</a></li>
+                <li><a href="#reports">Reports</a></li>
+                <li><a href="#settings">Settings</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h1>Welcome, Counselor</h1>
+                <button class="btn btn-secondary">Log Out</button>
+            </div>
+            <div class="session-requests">
+                <h2>Session Requests</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionRequestsBody">
+                        <!-- Session requests will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="upcoming-sessions">
+                <h2>Upcoming Sessions</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcomingSessionsBody">
+                        <!-- Upcoming sessions will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Session Details</h2>
+            <form id="sessionForm">
+                <label for="sessionNotes">Session Notes:</label>
+                <textarea id="sessionNotes" name="sessionNotes" rows="4" cols="50"></textarea>
+                <br>
+                <button type="submit" class="btn btn-primary">Save Notes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Sample data (in a real application, this would come from a backend)
+        const sessionRequests = [
+            { id: 1, name: "John Doe", date: "2024-09-15", time: "10:00", type: "Academic" },
+            { id: 2, name: "Jane Smith", date: "2024-09-16", time: "14:00", type: "Personal" },
+        ];
+
+        const upcomingSessions = [
+            { id: 3, name: "Alice Johnson", date: "2024-09-14", time: "11:00", type: "Career" },
+            { id: 4, name: "Bob Williams", date: "2024-09-14", time: "15:30", type: "Mental Health" },
+        ];
+
+        // Function to populate table
+        function populateTable(tableId, data) {
+            const tableBody = document.getElementById(tableId);
+            tableBody.innerHTML = "";
+            data.forEach(session => {
+                const row = `
+                    <tr>
+                        <td>${session.name}</td>
+                        <td>${session.date}</td>
+                        <td>${session.time}</td>
+                        <td>${session.type}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="openSessionModal(${session.id})">View</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // Populate tables on page load
+        populateTable("sessionRequestsBody", sessionRequests);
+        populateTable("upcomingSessionsBody", upcomingSessions);
+
+        // Modal functionality
+        const modal = document.getElementById("sessionModal");
+        const span = document.getElementsByClassName("close")[0];
+
+        function openSessionModal(sessionId) {
+            modal.style.display = "block";
+            // Here you would typically fetch session details based on the sessionId
+        }
+
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Form submission (in a real application, this would send data to a backend)
+        document.getElementById("sessionForm").onsubmit = function(e) {
+            e.preventDefault();
+            const notes = document.getElementById("sessionNotes").value;
+            console.log("Session notes saved:", notes);
+            modal.style.display = "none";
+        }
+    </script>
+</body>
+</html>
